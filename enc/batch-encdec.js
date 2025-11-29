@@ -155,9 +155,9 @@ function processFolderRecursive(inputFolder, outputFolder, mode, aesSize, passwo
   }
 }
 
-function compareFoldersContentsRecursively(inputFolder, outputFolder) {
+function compareFoldersContentsRecursively(inputFolder, outputFolder, excluding = []) {
   const items = fs.readdirSync(outputFolder);
-  const exclude = ['.git']
+  const exclude = excluding.concat(['.git']);
 
   for (const item of items) {
     const inputPath = path.join(inputFolder, item).replace('.enc', '');
@@ -165,7 +165,7 @@ function compareFoldersContentsRecursively(inputFolder, outputFolder) {
     console.log(inputPath, outputPath)
     if (!exclude.includes(item)) {
       if (fs.lstatSync(outputPath).isDirectory()) {
-        compareFoldersContentsRecursively(inputPath, outputPath);
+        compareFoldersContentsRecursively(inputPath, outputPath, excluding);
       } else if (fs.lstatSync(outputPath).isFile()) {
         if (!fs.existsSync(inputPath)) {
           console.log('remove', outputPath)
@@ -239,7 +239,7 @@ async function runBatch(configPath) {
     if (config[index].build && config[index].mode === 'encrypt') {
       /** remove files if not exist inside input folder */
       try {
-        compareFoldersContentsRecursively(inputFolder, outputFolder, currentConfig.exclude || []);
+        compareFoldersContentsRecursively(inputFolder, outputFolder, (currentConfig.exclude || []).concat(currentConfig.copy || []));
       } catch (error) {
         console.log(error)
         throw new Error('You must initialize build folder with git repository of builded lib ' + inputFolder + ' ' + outputFolder)
